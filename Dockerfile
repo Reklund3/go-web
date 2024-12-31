@@ -1,5 +1,5 @@
 # Stage 1: Build the Go binary
-FROM golang:1.23 AS builder
+FROM golang:latest AS builder
 
 # Set the working directory inside the container
 WORKDIR /app
@@ -8,19 +8,28 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN go build -o app .
+RUN CGO_ENABLED=0 GOOS=linux go build -o app .
 
 # Stage 2: Create a lightweight container for deployment
 FROM alpine:3.18
 
+RUN apk --no-cache add ca-certificates && \
+    adduser -D -g '' appuser
+
 # Working directory inside lightweight image
-WORKDIR /app
+WORKDIR /home/appuser
 
 # Copy the compiled binary from the builder stage
 COPY --from=builder /app/app .
 
+# Change ownership of the binary to the non-root user
+RUN chown appuser:appuser app
+
 # Expose port 8080
 EXPOSE 8080
 
+# Switch to non-root user
+USER appuser
+
 # Run the application
-CMD ["./app"]
+ENTRYPOINT ["./app"]
