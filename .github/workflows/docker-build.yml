@@ -3,8 +3,9 @@ name: Build and Deploy Go Application
 # Trigger this workflow on push to the main branch.
 on:
   push:
-    branches:
-      - main
+    release:
+      branches: [ 'main' ]
+      types: [ created ]
 
 # Define the workflow jobs.
 jobs:
